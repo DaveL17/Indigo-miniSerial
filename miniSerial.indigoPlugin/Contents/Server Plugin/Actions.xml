@@ -1,0 +1,14 @@
+<?xml version="1.0"?>
+<Actions>
+	<SupportURL>http://forums.indigodomo.com/viewtopic.php?f=177</SupportURL>
+
+    <Action id="sendString" deviceFilter="self.serialPort">
+        <Name>Send Sring</Name>
+        <CallbackMethod>sendString</CallbackMethod>
+        <ConfigUI>
+            <Field id="sendString" type="textfield" >
+                <Label>String to send:</Label>
+            </Field>
+        </ConfigUI>
+    </Action>
+</Actions>
