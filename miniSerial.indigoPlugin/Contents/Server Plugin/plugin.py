@@ -21,17 +21,17 @@ class SerialPort:
                 return
 
         except Exception as e:
-            self.logger.error(f"{self.name}: Exception opening serial port: {str(e)}")
+            self.logger.error(f"{self.name}: Exception opening serial port: {e}")
             return
 
     def __del__(self):
-        self.logger.debug("Serial stop called")
+        self.logger.debug(f"{self.name}: Serial stop called")
         if self.connSerial:
             self.connSerial.close()
             self.connSerial = None
 
     def send(self, cmd):
-        self.logger.debug(f"Sending serial string: {cmd}")
+        self.logger.debug(f"{self.name}: Sending serial string: {cmd}")
         cmd = cmd + "\r"
         self.connSerial.write(cmd.encode())
 
