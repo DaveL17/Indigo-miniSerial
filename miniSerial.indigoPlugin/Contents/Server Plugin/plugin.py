@@ -6,7 +6,7 @@ import logging
 
 class SerialPort:
 
-    def __init__(self, name, serialUrl):
+    def __init__(self, name, serialUrl, baud_rate, stop_bits):
         self.logger = logging.getLogger("Plugin.SerialGateway")
         self.name = name
         self.serialUrl = serialUrl
@@ -15,7 +15,7 @@ class SerialPort:
         self.logger.debug(f"{self.name}: Serial Port URL is: {self.serialUrl}")
 
         try:
-            self.connSerial = indigo.activePlugin.openSerial("miniSerial", serialUrl, 9600, stopbits=1, timeout=2, writeTimeout=1)
+            self.connSerial = indigo.activePlugin.openSerial("miniSerial", serialUrl, baud_rate, stopbits=stop_bits, timeout=2, writeTimeout=1)
             if self.connSerial is None:
                 self.logger.error(f"{self.name}: Failed to open serial port")
                 return
@@ -28,8 +28,8 @@ class SerialPort:
         self.logger.debug("Serial stop called")
         if self.connSerial:
             self.connSerial.close()
-            self.connSerial = None  
-       
+            self.connSerial = None
+
     def send(self, cmd):
         self.logger.debug(f"Sending serial string: {cmd}")
         cmd = cmd + "\r"
@@ -46,7 +46,7 @@ class Plugin(indigo.PluginBase):
         self.logLevel = int(self.pluginPrefs.get("logLevel", logging.INFO))
         self.indigo_log_handler.setLevel(self.logLevel)
         self.logger.debug(f"{self.logLevel =}")
-        
+
         self.ports = {}
 
     ########################################
@@ -64,17 +64,19 @@ class Plugin(indigo.PluginBase):
     ########################################
 
     def deviceStartComm(self, dev):
-                
+
         if dev.deviceTypeId == "serialPort":
-            port = SerialPort(dev.name, self.getSerialPortUrl(dev.pluginProps, "serialPort"))
+            baud_rate = int(dev.pluginProps.get("baud_rate", 9600))
+            stop_bits = int(dev.pluginProps.get("stop_bits", 1))
+            port = SerialPort(dev.name, self.getSerialPortUrl(dev.pluginProps, "serialPort"), baud_rate, stop_bits)
             if port:
-                self.ports[dev.id] = port           
+                self.ports[dev.id] = port
                 dev.updateStateOnServer(key="status", value="Connected")
                 dev.updateStateImageOnServer(indigo.kStateImageSel.SensorOn)
             else:
                 self.dev.updateStateOnServer(key="status", value="Failed")
                 self.dev.updateStateImageOnServer(indigo.kStateImageSel.SensorTripped)
-                      
+
         else:
             self.logger.error(f"{dev.name}: deviceStartComm: Unknown device type: {dev.deviceTypeId}")
 
@@ -93,8 +95,8 @@ class Plugin(indigo.PluginBase):
         self.logger.debug(f"validateDeviceConfigUi: typeId = {typeId}, devId = {devId}")
 
         if typeId == "serialPort":
-            valuesDict['address'] = self.getSerialPortUrl(valuesDict, 'serialPort') 
-        
+            valuesDict['address'] = self.getSerialPortUrl(valuesDict, 'serialPort')
+
         return True, valuesDict
 
     ########################################
@@ -104,4 +106,4 @@ class Plugin(indigo.PluginBase):
     def sendString(self, pluginAction):
         sendString = indigo.activePlugin.substitute(pluginAction.props["sendString"])
         self.ports[pluginAction.deviceId].send(sendString)
-                
+
